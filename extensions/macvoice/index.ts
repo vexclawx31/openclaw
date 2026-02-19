@@ -1,20 +1,26 @@
 import type { ChannelPlugin, OpenClawPluginApi } from "openclaw/plugin-sdk";
-import { buildChannelConfigSchema } from "openclaw/plugin-sdk";
-import { Type } from "@sinclair/typebox";
+import { emptyPluginConfigSchema } from "openclaw/plugin-sdk";
 
 type MacvoiceAccount = {
   accountId: string;
   enabled: boolean;
 };
 
-const MacvoiceChannelConfigSchema = Type.Object(
-  {
-    enabled: Type.Optional(Type.Boolean({ default: true })),
-    sharedSessionKey: Type.Optional(Type.String({ minLength: 1 })),
-    allowOrigins: Type.Optional(Type.Array(Type.String(), { default: ["*"] })),
+const MacvoiceChannelConfigSchema = {
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      enabled: { type: "boolean", default: true },
+      sharedSessionKey: { type: "string", minLength: 1 },
+      allowOrigins: {
+        type: "array",
+        items: { type: "string" },
+        default: ["*"],
+      },
+    },
   },
-  { additionalProperties: false },
-);
+} as const;
 
 const CHANNEL_ID = "macvoice" as const;
 
@@ -84,7 +90,7 @@ const macvoicePlugin: ChannelPlugin<MacvoiceAccount> = {
     nativeCommands: false,
     blockStreaming: true,
   },
-  configSchema: buildChannelConfigSchema(MacvoiceChannelConfigSchema),
+  configSchema: MacvoiceChannelConfigSchema,
   config: {
     listAccountIds: () => ["default"],
     resolveAccount: (cfg, _accountId) => {
@@ -109,11 +115,7 @@ const plugin = {
   id: CHANNEL_ID,
   name: "MacVoice",
   description: "macOS voice channel bridge",
-  configSchema: {
-    parse(value: unknown) {
-      return (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
-    },
-  },
+  configSchema: emptyPluginConfigSchema(),
   register(api: OpenClawPluginApi) {
     api.registerChannel({ plugin: macvoicePlugin as ChannelPlugin });
 
