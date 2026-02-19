@@ -64,7 +64,7 @@ function buildCorsHeaders(origin: string | undefined, allowOrigins: string[]): R
   return {
     "Access-Control-Allow-Origin": allowOrigin || "*",
     "Access-Control-Allow-Headers": "authorization, content-type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   };
 }
 
@@ -118,6 +118,39 @@ const plugin = {
   configSchema: emptyPluginConfigSchema(),
   register(api: OpenClawPluginApi) {
     api.registerChannel({ plugin: macvoicePlugin as ChannelPlugin });
+
+
+    api.registerHttpRoute({
+      path: "/api/channels/macvoice/health",
+      handler: async (req, res) => {
+        const cfg = api.runtime.config.loadConfig();
+        const allowOrigins = (cfg.channels?.macvoice?.allowOrigins as string[] | undefined) ?? ["*"];
+        const cors = buildCorsHeaders(typeof req.headers.origin === "string" ? req.headers.origin : undefined, allowOrigins);
+        for (const [k, v] of Object.entries(cors)) {
+          res.setHeader(k, v);
+        }
+
+        if (req.method === "OPTIONS") {
+          writeJson(res, 204, { ok: true });
+          return;
+        }
+
+        if (req.method !== "GET") {
+          writeJson(res, 405, { error: "method_not_allowed" });
+          return;
+        }
+
+        writeJson(res, 200, {
+          ok: true,
+          channel: CHANNEL_ID,
+          status: "ready",
+          sharedSessionKey:
+            typeof cfg.channels?.macvoice?.sharedSessionKey === "string"
+              ? cfg.channels.macvoice.sharedSessionKey
+              : null,
+        });
+      },
+    });
 
     api.registerHttpRoute({
       path: "/api/channels/macvoice/message",
