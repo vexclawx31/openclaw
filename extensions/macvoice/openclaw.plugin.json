@@ -1,0 +1,19 @@
+{
+  "id": "macvoice",
+  "name": "MacVoice",
+  "description": "Mac voice channel plugin",
+  "channels": ["macvoice"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": { "type": "boolean", "default": true },
+      "sharedSessionKey": { "type": "string", "minLength": 1 },
+      "allowOrigins": {
+        "type": "array",
+        "items": { "type": "string" },
+        "default": ["*"]
+      }
+    }
+  }
+}
